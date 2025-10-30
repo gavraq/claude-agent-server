@@ -74,10 +74,10 @@ export async function authenticateConnection(req: IncomingMessage): Promise<Auth
  * Generates a JWT token for a user
  * Used by Vercel to create tokens for authenticated users
  */
-export function generateToken(userId: string, expiresIn: string = '24h'): string {
+export function generateToken(userId: string, expiresIn: string | number = '24h'): string {
   return jwt.sign(
     { userId },
     JWT_SECRET,
-    { expiresIn }
+    { expiresIn } as jwt.SignOptions
   );
 }
