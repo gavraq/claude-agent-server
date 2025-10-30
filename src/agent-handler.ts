@@ -46,8 +46,8 @@ export async function handleAgentRequest(
       message: 'Processing your request with full UFC context...'
     }));
 
-    // Spawn Claude CLI process with streaming
-    const claudeArgs = ['chat', '--stream'];
+    // Spawn Claude CLI process (streaming happens automatically)
+    const claudeArgs = ['chat'];
 
     // Add system prompt if provided
     if (systemPrompt) {
@@ -146,7 +146,7 @@ export async function invokeSubAgent(
   logger.info(`Invoking sub-agent: ${agentName}`, { connectionId });
 
   try {
-    const claudeArgs = ['task', agentName, prompt, '--stream'];
+    const claudeArgs = ['task', agentName, prompt];
 
     logger.info('Spawning Claude CLI for sub-agent', { agentName, args: claudeArgs });
 
