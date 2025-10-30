@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Claude CLI globally
-RUN npm install -g @anthropic-ai/claude-sdk
+RUN npm install -g @anthropic-ai/claude-code
 
 # Set working directory
 WORKDIR /app
@@ -17,17 +17,20 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install application dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev for build)
+RUN npm ci
 
 # Copy application source
 COPY . .
 
-# Install daily-brief-system Python dependencies
-RUN pip3 install --break-system-packages -r daily-brief-system/requirements.txt
-
 # Build TypeScript
 RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
+
+# Install daily-brief-system Python dependencies
+RUN pip3 install --break-system-packages -r daily-brief-system/requirements.txt
 
 # Expose WebSocket port
 EXPOSE 8090
