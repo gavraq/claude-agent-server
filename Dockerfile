@@ -1,9 +1,11 @@
 FROM node:20-slim
 
-# Install dependencies
+# Install dependencies (including Python for daily-brief-system)
 RUN apt-get update && apt-get install -y \
     curl \
     git \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Claude CLI globally
@@ -20,6 +22,9 @@ RUN npm ci --only=production
 
 # Copy application source
 COPY . .
+
+# Install daily-brief-system Python dependencies
+RUN pip3 install --break-system-packages -r daily-brief-system/requirements.txt
 
 # Build TypeScript
 RUN npm run build

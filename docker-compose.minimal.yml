@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  claude-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude-agent-server
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      # UFC Context (read-only) - Core system awareness
+      - /home/pi/.claude/context:/ufc:ro
+
+      # Complete .claude directory for agents and commands
+      - /home/pi/.claude:/claude-config:ro
+
+      # Documents storage (read-write) - for uploaded files
+      - /home/pi/claude-documents:/documents:rw
+
+      # Claude CLI authentication (persistent)
+      - claude-auth:/root/.config/claude
+
+    environment:
+      - NODE_ENV=production
+      - PORT=8090
+      - JWT_SECRET=${JWT_SECRET}
+      - LOG_LEVEL=info
+      - UFC_PATH=/ufc
+      - CLAUDE_CONFIG_PATH=/claude-config
+      - DOCUMENTS_PATH=/documents
+
+    networks:
+      - claude-network
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  claude-auth:
+    driver: local
+
+networks:
+  claude-network:
+    driver: bridge
