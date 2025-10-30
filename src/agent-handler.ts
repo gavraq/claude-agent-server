@@ -46,12 +46,12 @@ export async function handleAgentRequest(
       message: 'Processing your request with full UFC context...'
     }));
 
-    // Spawn Claude CLI process (streaming happens automatically)
-    const claudeArgs = ['chat'];
+    // Spawn Claude CLI process with streaming output
+    const claudeArgs = ['chat', '--print', '--output-format', 'stream-json'];
 
     // Add system prompt if provided
     if (systemPrompt) {
-      claudeArgs.push('--system', systemPrompt);
+      claudeArgs.push('--system-prompt', systemPrompt);
     }
 
     // Add the user message
@@ -67,18 +67,45 @@ export async function handleAgentRequest(
     });
 
     let responseBuffer = '';
+    let lineBuffer = '';
 
-    // Handle stdout (streaming response)
+    // Handle stdout (streaming response in JSON format)
     claudeProcess.stdout.on('data', (data: Buffer) => {
       const chunk = data.toString();
-      responseBuffer += chunk;
+      lineBuffer += chunk;
 
-      // Send chunk to client
-      ws.send(JSON.stringify({
-        type: 'agent_chunk',
-        conversationId: request.conversationId,
-        chunk
-      }));
+      // Process complete lines (newline-delimited JSON)
+      const lines = lineBuffer.split('\n');
+      lineBuffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        try {
+          const jsonChunk = JSON.parse(line);
+
+          // Handle different JSON stream events
+          if (jsonChunk.type === 'text' && jsonChunk.text) {
+            responseBuffer += jsonChunk.text;
+
+            // Send text chunk to client
+            ws.send(JSON.stringify({
+              type: 'agent_chunk',
+              conversationId: request.conversationId,
+              chunk: jsonChunk.text
+            }));
+          } else if (jsonChunk.type === 'error') {
+            logger.error('Claude CLI error event:', jsonChunk);
+            ws.send(JSON.stringify({
+              type: 'agent_error',
+              conversationId: request.conversationId,
+              error: jsonChunk.message || 'Unknown error'
+            }));
+          }
+        } catch (parseError) {
+          logger.warn('Failed to parse JSON line:', line, parseError);
+        }
+      }
     });
 
     // Handle stderr (errors and warnings)
