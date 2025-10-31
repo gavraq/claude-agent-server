@@ -46,23 +46,19 @@ export async function handleAgentRequest(
       message: 'Processing your request with full UFC context...'
     }));
 
-    // Spawn Claude CLI process with streaming output
-    const claudeArgs = ['chat', '--print', '--output-format', 'stream-json', '--verbose'];
+    // Use Python SDK handler for reliable streaming
+    const pythonScript = '/app/src/claude_sdk_handler.py';
+    const pythonArgs = [pythonScript, systemPrompt, request.message];
 
-    // Add system prompt if provided
-    if (systemPrompt) {
-      claudeArgs.push('--system-prompt', systemPrompt);
-    }
+    logger.info('Spawning Python SDK handler', {
+      systemPromptLength: systemPrompt.length,
+      messageLength: request.message.length
+    });
 
-    // Add the user message
-    claudeArgs.push(request.message);
-
-    logger.info('Spawning Claude CLI', { args: claudeArgs });
-
-    const claudeProcess = spawn('claude', claudeArgs, {
+    const claudeProcess = spawn('python3', pythonArgs, {
       env: {
         ...process.env,
-        // Claude CLI will use authenticated credentials from volume
+        // Anthropic API key from environment
       }
     });
 

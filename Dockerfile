@@ -29,7 +29,8 @@ RUN npm run build
 # Remove dev dependencies to reduce image size
 RUN npm prune --production
 
-# Install daily-brief-system Python dependencies
+# Install Python dependencies (Anthropic SDK + daily-brief-system)
+RUN pip3 install --break-system-packages -r requirements.txt
 RUN pip3 install --break-system-packages -r daily-brief-system/requirements.txt
 
 # Expose WebSocket port
