@@ -47,7 +47,7 @@ export async function handleAgentRequest(
     }));
 
     // Spawn Claude CLI process with streaming output
-    const claudeArgs = ['chat', '--print', '--output-format', 'stream-json'];
+    const claudeArgs = ['chat', '--print', '--output-format', 'stream-json', '--verbose'];
 
     // Add system prompt if provided
     if (systemPrompt) {
